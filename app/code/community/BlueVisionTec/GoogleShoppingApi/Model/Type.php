@@ -161,6 +161,7 @@ class BlueVisionTec_GoogleShoppingApi_Model_Type extends Mage_Core_Model_Abstrac
     protected function _createAttribute($name)
     {
         $modelName = 'googleshoppingapi/attribute_' . $this->_prepareModelName($name);
+        
         $useDefault = false;
         try {
             $attributeModel = Mage::getModel($modelName);

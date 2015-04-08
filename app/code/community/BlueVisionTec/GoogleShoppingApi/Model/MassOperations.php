@@ -143,6 +143,7 @@ class BlueVisionTec_GoogleShoppingApi_Model_MassOperations
                 if ($this->_flag && $this->_flag->isExpired()) {
                     break;
                 }
+                
                 $removeInactive = $this->_getConfig()->getConfigData('autoremove_disabled',$item->getStoreId());
 				$renewNotListed = $this->_getConfig()->getConfigData('autorenew_notlisted',$item->getStoreId());
                 try {
@@ -171,7 +172,7 @@ class BlueVisionTec_GoogleShoppingApi_Model_MassOperations
             return $this;
         }
 
-        $this->_getNotifier()->addNotice(
+        $this->_getNotifier()->addSuccess(
             Mage::helper('googleshoppingapi')->__('Product synchronization with Google Shopping completed'),
             Mage::helper('googleshoppingapi')->__('Total of %d items(s) have been deleted; total of %d items(s) have been updated.', $totalDeleted, $totalUpdated)
         );
@@ -210,8 +211,20 @@ class BlueVisionTec_GoogleShoppingApi_Model_MassOperations
                     // The item was removed successfully
                     $totalDeleted++;
                 } catch (Exception $e) {
-                    Mage::logException($e);
-                    $errors[] = Mage::helper('googleshoppingapi')->__('The item "%s" hasn\'t been deleted.', $item->getProduct()->getName());
+                    
+                    if($e->getCode() == 404){
+						$item->delete();
+						$this->_getNotifier()->addNotice(
+							Mage::helper('googleshoppingapi')->__(
+								'The item "%s" was not found on GoogleContent',
+								$item->getProduct()->getName()
+							)
+						);
+						$totalDeleted++;
+                    } else {
+						Mage::logException($e);
+						$errors[] = Mage::helper('googleshoppingapi')->__('The item "%s" hasn\'t been deleted.', $item->getProduct()->getName());
+                    }
                 }
             }
         } else {
@@ -291,7 +304,7 @@ class BlueVisionTec_GoogleShoppingApi_Model_MassOperations
     /**
      * Get Google Shopping config model
      *
-     * @return Mage_GoogleShopping_Model_Config
+     * @return BlueVisionTec_GoogleShoppingApi_Model_Config
      */
     protected function _getConfig()
     {
